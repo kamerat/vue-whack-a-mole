@@ -1,17 +1,13 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <whack-a-mole />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import whackAMole from "./components/whack-a-mole.vue";
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    whackAMole
   }
 }
 </script>
