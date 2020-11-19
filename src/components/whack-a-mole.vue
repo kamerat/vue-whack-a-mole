@@ -1,44 +1,74 @@
 <template>
-  <div class="whack-a-mole">
-        <button
-            class="hole"
-            v-for="hole in holes"
-            :key="hole"
-            @click="whack(hole)"
-        >
-            <transition
-                name="mole-move"
-                @after-leave="afterLeave(hole)"
+    <div class="whack-a-mole">
+        <section class="game-area">
+            <button
+                class="hole"
+                v-for="hole in holes"
+                :key="hole"
+                @click="whack(hole)"
             >
-                <span v-if="moles.find(mole => mole.hole === hole && mole.alive)" class="mole">🐹</span>
-            </transition>
-        </button>
-  </div>
+                <mole
+                    :mole="moles.find(mole => mole.hole === hole) || {}"
+                    @after-leave="afterLeave"
+                    @killed="score++"
+                />
+            </button>
+            
+            <hammer />
+        </section>
+
+
+        <section class="info">
+            <h1>🐹{{ score }}</h1>
+            <button v-if="!playing" @click="initGame">Play ▶️</button>
+            <button v-else @click="reset">Reset ⏹️</button>
+        </section>
+    </div>
 </template>
 
 <script>
+import mole from "./mole";
+import hammer from "./hammer";
 export default {
+    components: {
+        mole,
+        hammer,
+    },
     data: () => ({
-        holes: 6,
+        holes: 9,
         maxMoles: 2,
         moles: [],
         animatingHoles: [],
+        score: 0,
+        playing: false,
+        session: null,
+        music: null,
     }),
-    created() {
-        this.initGame();
-    },
     computed: {
         isMaxMoles() {
             return this.maxMoles <= this.holes && this.moles.length >= this.maxMoles
         }
     },
     methods: {
+        reset() {
+            clearInterval(this.session);
+            this.score = 0;
+            this.playing = false;
+            this.music.pause();
+            
+        },
         afterLeave(hole) {
             const moleIndex = this.moles.findIndex(mole => mole.hole === hole);
             this.moles.splice(moleIndex, 1);
         },
         initGame() {
-            setInterval(() => {
+            this.music = new Audio(require('../assets/sanctuary_guardian.mp3'));
+            this.music.loop = true;
+            this.music.play();
+            
+            this.playing = true;
+            
+            this.session = setInterval(() => {
                 this.spawnMole()
             }, 100);
         },
@@ -66,13 +96,14 @@ export default {
 
             this.moles.push({
                 hole: newMoleHole,
-                alive: true, 
+                alive: true,
+                show: true,
                 timeout: setTimeout(() => {
                     const moleIndex = this.moles.findIndex(mole => mole.hole === newMoleHole);
                     const mole = this.moles[moleIndex];
                     if (mole) {
                         clearTimeout(this.moles[moleIndex].timeout);
-                        this.moles[moleIndex].alive = false;
+                        this.moles[moleIndex].show = false;
                     }
                 }, 1000),
             })
@@ -87,36 +118,45 @@ export default {
 
 <style lang="scss">
 .whack-a-mole {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    grid-gap: 70px 50px;
-    .hole {
-        height: 100px;
-        border-radius: 50%;
-        background: #7a7a7a;
-        box-shadow: inset -1px 60px 18px 20px black;
-        outline: none;
-        font-size: 100px;
-        overflow: hidden;
+    height: 100vh;
+    background-color: #272c42;
+    .game-area {
+        padding: 20px;
+        cursor: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        grid-gap: 70px 50px;
+        .hole {
+            height: 100px;
+            border-radius: 50%;
+            background: #7a7a7a;
+            box-shadow: inset -1px 60px 18px 20px black;
+            outline: none;
+            overflow: hidden;
+            border: 0;
+            user-select: none;
+            cursor: inherit;
+        }
     }
-
-    .mole {
-        display: block;
-        line-height: 110px;
-    }
-
-    .mole-move-enter-active {
-        transition: transform 600ms cubic-bezier(0.65, 0.05, 0.36, 1)
-    }
-    .mole-move-leave-active {
-        transition: transform 150ms ease-out;
-    }
-    .mole-move-enter {
-        transform: translateY(100px);
-    }
-    .mole-move-leave-to {
-        transform: translateY(100px);
+    .info {
+        display: grid;
+        place-items: center;
+        h1 {
+            color: #fff;
+            margin: 20px 0 0;
+            font-size: 2.5em;
+        }
+        button {
+            margin-top: 20px;
+            border: 0;
+            height: 30px;
+            width: 100px;
+            border-radius: 20px;
+            background: #ffb900;
+            font-size: 1em;
+            font-weight: bold;
+        }
     }
 }
 </style>
